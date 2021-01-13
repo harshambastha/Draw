@@ -7,13 +7,57 @@ import './App.css';
 function App() {
   var mainStage=useRef();
   var layer=useRef();
-
+  const handleContextMenu=()=>{
+    console.log('Hey');
+  }
   const createRectangle=()=>{
     let rectangle=new Konva.Rect({
-      x:160,y:50,width:100,height:100,stroke:'black',strokeWidth:5, draggable:true
+      x:160,y:50,width:100,height:100,stroke:'black',strokeWidth:5,
+      onContextMenu:handleContextMenu
     });
-    layer.current.add(rectangle);
-    mainStage.current.draw(rectangle);
+    let textNode=new Konva.Text({
+      text:'Activity',
+      x:180,y:80,fontSize:20
+    });
+    let group=new Konva.Group({draggable:true});
+    group.add(rectangle);
+    group.add(textNode);
+    layer.current.add(group);
+    textNode.on('dblclick', () => {
+      // at first lets find position of text node relative to the stage:
+      var textPosition = textNode.getAbsolutePosition();
+
+      // then lets find position of stage container on the page:
+      var stageBox = mainStage.current.container().getBoundingClientRect();
+
+      // so position of textarea will be the sum of positions above:
+      var areaPosition = {
+        x: stageBox.left + textPosition.x,
+        y: stageBox.top + textPosition.y,
+      };
+
+      // create textarea and style it
+      var textarea = document.createElement('textarea');
+      document.body.appendChild(textarea);
+
+      textarea.value = textNode.text();
+      textarea.style.position = 'absolute';
+      textarea.style.top = areaPosition.y + 'px';
+      textarea.style.left = areaPosition.x + 'px';
+      textarea.style.width = textNode.width();
+
+      textarea.focus();
+
+      textarea.addEventListener('keydown', function (e) {
+        // hide on enter
+        if (e.keyCode === 13) {
+          textNode.text(textarea.value);
+          layer.current.draw();
+          document.body.removeChild(textarea);
+        }
+      });
+    });
+    mainStage.current.draw(layer);
     console.log('Rectangle Created');
   }
   const createCircle=()=>{
@@ -85,7 +129,10 @@ function App() {
     });
     console.log('Text');
   }
+
+
   return (
+
     <Stage ref={mainStage} width={window.innerWidth} height={window.innerHeight}>
     <Layer ref={layer}>
 
@@ -98,6 +145,9 @@ function App() {
         strokeWidth='5'
         stroke='black'
         onMouseDown={createRectangle}
+        onContextMenu={()=>{
+          console.log('Button Clicked');
+        }}
       />
        <Circle x={65} y={250} radius={50}   strokeWidth='5' stroke='black' onMouseDown={createCircle}/>
 
