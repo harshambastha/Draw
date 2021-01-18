@@ -1,20 +1,34 @@
 import logo from './logo.svg';
-import React, { useRef, useState } from 'react';
+import React, { Component, useRef, useState } from 'react';
 import { Stage,Text,Rect, Layer, Circle, Line} from 'react-konva';
 import Konva from 'konva';
 import './App.css';
+import ContextMenu from "./ContextMenu";
+import Portal from "./Portal";
 
-function App() {
+function App(){
   var mainStage=useRef();
   var layer=useRef();
-  const handleContextMenu=()=>{
-    console.log('Hey');
+  var [selectContextMenu,setContextMenu]=useState(null);
+  var rect=useRef();
+
+  var handleContextMenu=(e)=>{
+    e.evt.preventDefault(true);
+    const mousePosition = e.target.getStage().getPointerPosition();
+    setContextMenu(
+      selectContextMenu= {
+        type: "START",
+        position: mousePosition
+      });
+    console.log(selectContextMenu);
+    console.log(mousePosition);
   }
   const createRectangle=()=>{
     let rectangle=new Konva.Rect({
       x:160,y:50,width:100,height:100,stroke:'black',strokeWidth:5,
       onContextMenu:handleContextMenu
     });
+    console.log(rectangle);
     let textNode=new Konva.Text({
       text:'Activity',
       x:180,y:80,fontSize:20
@@ -66,6 +80,14 @@ function App() {
     });
     layer.current.add(circle);
     mainStage.current.draw(circle);
+  }
+
+  const handleOptionSelected=(option)=>{
+    console.log(option);
+    if(option==='option1') {
+      rect.fill='blue';
+    }
+    setContextMenu(selectContextMenu=null);
   }
 
   const createLine=()=>{
@@ -131,13 +153,14 @@ function App() {
   }
 
 
-  return (
+  return(
 
     <Stage ref={mainStage} width={window.innerWidth} height={window.innerHeight}>
     <Layer ref={layer}>
 
       <Text draggable text="Create Text" fontSize={25} x={10} y={10} onMouseDown={createText}/>
       <Rect
+        ref={rect}
         x={20}
         y={50}
         width={100}
@@ -145,14 +168,20 @@ function App() {
         strokeWidth='5'
         stroke='black'
         onMouseDown={createRectangle}
-        onContextMenu={()=>{
-          console.log('Button Clicked');
-        }}
+        onContextMenu={handleContextMenu}
       />
        <Circle x={65} y={250} radius={50}   strokeWidth='5' stroke='black' onMouseDown={createCircle}/>
 
       <Line x={0} y={0} stroke='black' points={[20,350,110,350]} strokeWidth='8' onMouseDown={createLine}/>
       <Line x={0} y={0} stroke='black' points={[150,0,150,window.innerHeight]} strokeWidth='5'/>
+               {selectContextMenu && (
+            <Portal>
+              <ContextMenu
+                {...selectContextMenu}
+                onOptionSelected={handleOptionSelected}
+              />
+            </Portal>
+          )}
     </Layer>
     </Stage>
   );
