@@ -6,14 +6,19 @@ import './App.css';
 import ContextMenu from "./ContextMenu";
 import Portal from "./Portal";
 
+
+
 function App(){
   var mainStage=useRef();
   var layer=useRef();
   var email=useRef();
-  var [selectContextMenu,setContextMenu]=useState(null);
-  var [circles,setCircles]=useState([]);
+  let draggableArrow=useRef();
+  const [selectContextMenu,setContextMenu]=useState(null);
+  const [circles,setCircles]=useState([]);
   var rect=useRef();
   var draggableCircleRef=useRef();
+  let countOfShapes=0;
+  let shapesPosition=[];
 
   useEffect(()=>{
     console.log('Welcome');
@@ -44,15 +49,15 @@ function App(){
       group.add(imageNode);
       mainStage.current.draw();
     });
-    var tr = new Konva.Transformer({
-      // anchorStroke: 'blue',
-      anchorFill: 'blue',
-      anchorSize: 7,
-      borderStroke: 'light blue',
-      borderDash: [1,1,1,1],
-      node: group,
-    });
-    layer.current.add(tr);
+    // var tr = new Konva.Transformer({
+    //   // anchorStroke: 'blue',
+    //   anchorFill: 'blue',
+    //   anchorSize: 7,
+    //   borderStroke: 'light blue',
+    //   borderDash: [1,1,1,1],
+    //   node: group,
+    // });
+    // layer.current.add(tr);
     layer.current.add(group);
     mainStage.current.draw();
   }
@@ -150,15 +155,6 @@ function App(){
     setContextMenu(selectContextMenu=null);
   }
 
-  const createLine=()=>{
-    let line=new Konva.Line({
-      x:10,y:10,points:[150,340,240,340], draggable:true, strokeWidth:8, stroke:'black'
-    });
-    layer.current.add(line);
-    mainStage.current.draw(line);
-    console.log('line created');
-  }
-
   const createText=()=>{
     var textNode = new Konva.Text({
       text: 'Some text here',
@@ -212,12 +208,36 @@ function App(){
     console.log('Text');
   }
 
-  
-
   return(
-
-    <Stage ref={mainStage} width={window.innerWidth} height={window.innerHeight}>
-
+    <Stage ref={mainStage} width={window.innerWidth} height={window.innerHeight} onClick={(e)=>{
+      if(e.target===e.target.getStage()){
+        mainStage.current.find('.Tran').destroy();
+        layer.current.draw();
+        return;
+      }
+      
+      mainStage.current.find('.Tran').destroy();
+      let tr=new Konva.Transformer({name:'Tran'});
+      layer.current.add(tr);
+      tr.nodes([e.target]);
+      mainStage.current.draw();
+    }} 
+    onDragEnd={(e)=>{
+     countOfShapes++;
+     let x=mainStage.current.getPointerPosition().x;
+     let y=mainStage.current.getPointerPosition().y;
+     shapesPosition.push({x,y});
+     if(countOfShapes>2) shapesPosition.shift();
+     if(countOfShapes>=2){
+      //Draw Arrow
+      let arrow=new Konva.Arrow({
+        points:[shapesPosition[0].x,shapesPosition[0].y,shapesPosition[1].x,shapesPosition[1].y],
+        pointerLength:10,pointerWidth:10,fill:'black',stroke:'black',hitStrokeWidth:4
+      });
+      layer.current.add(arrow);
+      mainStage.current.draw();
+     }
+    }}>
     <Layer ref={layer}>
 
       <Text draggable text="Create Text" fontSize={25} x={10} y={10} onMouseDown={createText}/>
@@ -239,7 +259,6 @@ function App(){
          let draggableCircle=draggableCircleRef;
          let newCircles=circles;
          newCircles.push(
-          //  ...newCircles,
            {x:draggableCircleRef.current.getStage().getPointerPosition().x,
           y:draggableCircleRef.current.getStage().getPointerPosition().y, radius:50,draggable:true,fill:'blue'}
          );
@@ -250,7 +269,11 @@ function App(){
          mainStage.current.draw();
        }}/>
 
-      <Line x={0} y={0} stroke='black' points={[20,350,110,350]} strokeWidth={8} onMouseDown={createLine}/>
+      <Arrow x={0} y={0} stroke='black' points={[20,350,110,350]} strokeWidth={8}/>
+      <Arrow x={0} y={0} stroke='black' points={[20,350,110,350]} strokeWidth={8} draggable ref={draggableArrow} onDragEnd={e=>{
+        draggableArrow.current.position({x:0,y:0});
+        mainStage.current.draw();
+      }}/>
       <Line x={0} y={0} stroke='black' points={[150,0,150,window.innerHeight]} strokeWidth={5}/>
                {selectContextMenu && (
             <Portal>
@@ -261,103 +284,13 @@ function App(){
             </Portal>
           )}
       <Rect ref={email} x={20} y={400} width={100} height={100} stroke='orange' strokeWidth={5} onClick={createEmailBox}/>
-      <Circle x={450} y={250} radius={50}   strokeWidth={5} stroke='black' draggable={true}/>
-      <Circle x={600} y={250} radius={50}   strokeWidth={5} stroke='black' draggable={true}/>
+      <Circle x={400} y={250} radius={50}   strokeWidth={5} stroke='black' draggable={true} />
+      <Circle x={600} y={250} radius={50}   strokeWidth={5} stroke='black' draggable={true} />
 
-      <Arrow tension={0.2} points={[100,100,150,150,200,200]} stroke='black' fill='black' strokeWidth={10} pointerWidth={6} draggable={true}/>
     </Layer>
-    {/* <Layer>
-    {circles.map(eachCircle=>{
-      console.log(eachCircle);
-      return(
-          <Circle
-          x={eachCircle.x}
-          y={eachCircle.y}
-          radius={eachCircle.radius}
-          fill={eachCircle.fill}
-          draggable={eachCircle.draggable}
-        />
-      );
-      })}
-      </Layer> */}
     </Stage>
+
   );
 
 }
 export default App;
-
-// import React, { Component } from "react";
-// import { render } from "react-dom";
-// import { Stage, Layer, Rect, Text } from "react-konva";
-// import Konva from "konva";
-
-// export default class ColoredRect extends React.Component {
-//   constructor(props) {
-//     super(props);
-//     this.state = { color: "green", rects: [] };
-//   }
-
-//   handleClick = () => {
-//     this.setState({
-//       color: Konva.Util.getRandomColor()
-//     });
-//   };
-//   render() {
-//     return (
-//       <Stage
-//         width={window.innerWidth}
-//         height={window.innerHeight}
-//         ref="stageReference"
-//       >
-//         <Layer>
-//           <Rect
-//             ref="draggableRectReference"
-//             x={20}
-//             y={20}
-//             width={50}
-//             height={50}
-//             fill={this.state.color}
-//             shadowBlur={5}
-//             onClick={this.handleClick}
-//             draggable={true}
-//             onDragEnd={() => {
-//               var draggableRect = this.refs.draggableRectReference;
-//               /* adding a new rect in in state, no need to call draw() or anything
-//               because updating state triggers render() again */
-//               this.setState({
-//                 rects: [
-//                   ...this.state.rects,
-//                   {
-//                     x: draggableRect.getStage().getPointerPosition().x,
-//                     y: draggableRect.getStage().getPointerPosition().y,
-//                     width: 50,
-//                     height: 50,
-//                     fill: "green",
-//                     draggable: true
-//                   }
-//                 ]
-//               });
-//               //returning draggable rect to original position
-//               draggableRect.position({ x: 20, y: 20 });
-//               this.refs.stageReference.draw(); // or draggableRect.getStage().draw()
-//             }}
-//           />
-//         </Layer>
-//         <Layer>
-//           {this.state.rects.map(eachRect => {
-//             return (
-//               <Rect
-//                 x={eachRect.x}
-//                 y={eachRect.y}
-//                 width={eachRect.width}
-//                 height={eachRect.height}
-//                 fill={eachRect.fill}
-//                 draggable={eachRect.draggable}
-//               />
-//             );
-//           })}
-//         </Layer>
-//       </Stage>
-//     );
-//   }
-// }
